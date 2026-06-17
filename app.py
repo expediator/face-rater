@@ -1,17 +1,11 @@
-import streamlit as st
-import cv2
-import mediapipe as mp
 import math
 import numpy as np
+import streamlit as st
+import mediapipe as mp
 from PIL import Image
 
 st.set_page_config(page_title="Face Rater · expediator", page_icon="🎭", layout="centered")
-
-st.markdown("""
-<style>
-  .block-container { max-width: 720px; }
-</style>
-""", unsafe_allow_html=True)
+st.markdown("<style>.block-container{max-width:720px}</style>", unsafe_allow_html=True)
 
 st.title("🎭 Face Rater v2.01")
 st.markdown(
@@ -22,7 +16,7 @@ st.markdown(
 )
 st.divider()
 
-# ── Analysis logic ──────────────────────────────────────────────
+# ── Analysis logic (no cv2 — uses PIL → numpy RGB arrays) ───────
 mp_face   = mp.solutions.face_mesh
 face_mesh = mp_face.FaceMesh(static_image_mode=True, max_num_faces=1)
 
@@ -37,8 +31,11 @@ def score_from_ideal(value, lo, hi):
         return 9.0
     return clamp(9.0 - min(abs(value - lo), abs(value - hi)) * 120)
 
-def analyze_front(bgr):
-    res = face_mesh.process(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB))
+def pil_to_rgb(file):
+    return np.array(Image.open(file).convert("RGB"))
+
+def analyze_front(rgb):
+    res = face_mesh.process(rgb)
     if not res.multi_face_landmarks:
         raise ValueError("No face detected in FRONT photo. Use a well-lit, straight-on image.")
     lm = res.multi_face_landmarks[0].landmark
@@ -55,8 +52,8 @@ def analyze_front(bgr):
         "face_h":   face_h,
     }
 
-def analyze_side(bgr, face_h):
-    res = face_mesh.process(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB))
+def analyze_side(rgb, face_h):
+    res = face_mesh.process(rgb)
     if not res.multi_face_landmarks:
         raise ValueError("No face detected in SIDE photo. Use a clear profile image.")
     lm = res.multi_face_landmarks[0].landmark
@@ -66,11 +63,12 @@ def analyze_side(bgr, face_h):
         "jaw_proj": score_from_ideal(abs(jaw.z  - nose.z) / face_h, 0.02, 0.04),
     }
 
-def full_analysis(front_bgr, side_bgr, gender):
-    f = analyze_front(front_bgr)
-    s = analyze_side(side_bgr, f["face_h"])
+def full_analysis(front_rgb, side_rgb, gender):
+    f = analyze_front(front_rgb)
+    s = analyze_side(side_rgb, f["face_h"])
     harmony    = clamp((f["jaw"] + f["cheek"] + f["symmetry"] + s["chin"] + s["jaw_proj"]) / 5)
-    dimorphism = clamp((f["jaw"] + s["jaw_proj"]) / 2) if gender == "Male" else clamp((f["eye"] + f["cheek"]) / 2)
+    dimorphism = clamp((f["jaw"] + s["jaw_proj"]) / 2) if gender == "Male" \
+                 else clamp((f["eye"] + f["cheek"]) / 2)
     face_rating    = clamp(harmony * 0.65 + f["symmetry"] * 0.35)
     attractiveness = clamp((face_rating + f["eye"]) / 2)
     return dict(front=f, side=s, harmony=harmony, dimorphism=dimorphism,
@@ -105,10 +103,7 @@ st.divider()
 if st.button("▶ Run Analysis", type="primary", disabled=not (front_file and side_file)):
     with st.spinner("Analysing facial geometry…"):
         try:
-            def to_bgr(f):
-                return cv2.cvtColor(np.array(Image.open(f).convert("RGB")), cv2.COLOR_RGB2BGR)
-
-            r = full_analysis(to_bgr(front_file), to_bgr(side_file), gender)
+            r = full_analysis(pil_to_rgb(front_file), pil_to_rgb(side_file), gender)
             f, s = r["front"], r["side"]
 
             st.success("Analysis complete!")
