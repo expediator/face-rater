@@ -1,41 +1,76 @@
-# Face Rater
+# 🎭 FaceMetrics — AI Facial Geometry Analysis
 
-A computer vision app that analyzes facial geometry from photos and produces a structured attractiveness and symmetry report.
+Browser-based facial geometry analyzer using **MediaPipe FaceMesh**. Upload photos or use your live webcam. Scores jaw width, cheekbones, symmetry, eye area, chin and jaw projection — computed entirely client-side, no server required.
 
-Built with **Python**, **OpenCV**, and **MediaPipe FaceMesh**.
+**Live:** [expediator.github.io/face-rater](https://expediator.github.io/face-rater/) &nbsp;·&nbsp; **Portfolio:** [expediator.github.io/resume](https://expediator.github.io/resume/)
+
+---
+
+## How It Works
+
+1. Select a gender (affects dimorphism scoring)
+2. Provide a **front-facing photo** + **side-profile photo** (upload file OR capture from webcam)
+3. MediaPipe FaceMesh detects 468 landmarks on each face
+4. Ratios between landmark positions are scored against ideal ranges
+5. 11 individual scores displayed on color-coded bars (scale 1–10)
+
+## Scores
+
+| Score | What's Measured | Ideal Range |
+|---|---|---|
+| Jaw Width | Jaw width ÷ face height | 0.75 – 0.85 |
+| Cheekbones | Cheek width ÷ jaw width | 1.1 – 1.3 |
+| Symmetry | Left vs right eye width difference | smaller = better |
+| Eye Area | Average eye opening (normalized) | larger = better |
+| Chin Projection | Chin depth vs nose (side view, z-axis) | 0.02 – 0.045 |
+| Jaw Projection | Jaw depth vs nose (side view, z-axis) | 0.02 – 0.04 |
+
+Aggregate: Facial Harmony, Dimorphism, Face Rating, Attractiveness, Max Potential.
 
 ## Features
 
-- Dual-view analysis: upload a **front** photo and a **side profile** photo
-- Scores jaw width, cheekbone prominence, facial symmetry, eye area, chin and jaw projection
-- Gender-specific sexual dimorphism calculation
-- Tkinter GUI with file picker — no command-line required
-- Soft scoring calibrated to realistic human proportions
+- 📁 **File upload** or **📷 webcam capture** for each photo zone
+- ⚡ **Auto brightness enhancement** — dark/poorly lit photos boosted via Canvas API before analysis
+- 🚫 **No server** — 100% browser-based, MediaPipe JS runs locally
+- 🌐 **No install** — works in any modern browser
 
-## Usage
+## Version History (16 versions)
+
+| Version | What changed |
+|---|---|
+| v0 | Single image, raw ratio output in terminal |
+| v1.x | Scoring scale (1–10), basic GUI |
+| v2.0 | Dual-photo (front + side), Tkinter desktop GUI |
+| v2.01 | Rewrote as browser JS app using MediaPipe JS CDN |
+| v2.01+ | Added webcam capture, brightness filter, renamed FaceMetrics |
+
+## Tech Stack
+
+- **MediaPipe FaceMesh 0.4** — 468-point facial landmark detection (JS, via CDN)
+- **Canvas API** — image preprocessing and brightness normalization
+- **Vanilla JS / HTML / CSS** — no frameworks, no build step
+- **GitHub Pages** — free static hosting from `/docs` folder
+
+## Files
+
+```
+face-rater/
+├── docs/
+│   └── index.html       ← Web app (deployed to GitHub Pages)
+├── face_rater.py        ← Python desktop app (v2.01, Tkinter + OpenCV)
+├── app.py               ← Deprecated Streamlit version (ignore)
+├── requirements.txt     ← Python deps for desktop app
+├── versions/            ← Full history v0 → v2.02b (16 files)
+└── README.md
+```
+
+## Run the Desktop App (Python)
 
 ```bash
-pip install opencv-python mediapipe
+pip install mediapipe opencv-python
 python face_rater.py
 ```
 
-1. Select gender (Male / Female)
-2. Upload a front-facing photo
-3. Upload a side profile photo
-4. Click **Run Analysis**
+## Disclaimer
 
-## Version History
-
-| Version | File | Description |
-|---|---|---|
-| v0 precursor | `versions/v0_precursor_jaw_width.py` | Early jaw/face-width geometry study |
-| v1.00 | `versions/v1_00_static.py` | Static single-image CLI rater |
-| v1.11 | `versions/v1_11.py` | First full CLI with detailed report (jaw, symmetry, cheeks, skin, FWHR) |
-| v1.12 – v1.21 | `versions/v1_12.py` … | Tkinter GUI iterations — progressive UX refinement |
-| v2.00 | `versions/v2_00.py` | Dual-view (front + side) introduced; redesigned scoring |
-| **v2.01** | `face_rater.py` ← **main** | Fixed depth normalization, anatomically realistic projections |
-| v2.02b | `versions/v2_02b_scoring.py` | Soft-scoring algorithm improvement (no GUI — logic reference) |
-
-## Stack
-
-`Python` · `OpenCV` · `MediaPipe` · `Tkinter` · `math`
+Scores are geometric proportions only — not medical, scientific, or beauty judgements. Educational/portfolio demo only.
